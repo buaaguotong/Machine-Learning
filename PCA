@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec 24 22:33:41 2018
+
+@author: Tong
+"""
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def pca(data,target_dim):
+    #去中心化
+    normolized=data-np.sum(data,0)/data.shape[0]
+    covX=np.cov(normolized.T)
+    val,vector=np.linalg.eig(covX)
+    indice=np.argsort(-val)#升序变降序
+    took_vector=np.matrix(vector[indice[:target_dim],:])#dim~[target_dim,original_dim]
+    #组成变换矩阵
+    W=took_vector.T#dim~[original_dim,target_dim]
+    #对高维数据进行线性变换
+    final_data=np.matrix(W.T)*np.matrix(normolized.T)#normolized~dim[num,original_dim]
+                                                     #final_data~dim[target_dim,num]
+                                                     
+    recon_data=(final_data.T*np.matrix(took_vector))#dim[num,target_dim]*dim[target_dim,original_dim]~dim[num,original_dim]
+    return final_data,recon_data
+def visualize(data,num):
+    data=data.T#~dim[num,target_dim]
+    data=np.array(data)
+    plt.figure()
+    for i in range(num):
+        plt.scatter(data[i][0],data[i][1],s=50,c='blue')
+    plt.show()
+    
+def main():
+    training_data=np.loadtxt('data.txt').astype(np.float32)
+    target_dim=2
+    num=training_data.shape[0]
+    final_data,_=pca(training_data,target_dim)
+    visualize(final_data,num)
+    
+if __name__=='__main__':
+    main()
+    
+    
+    
+    
+                
+    
+    
