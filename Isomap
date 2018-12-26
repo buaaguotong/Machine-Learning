@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 25 13:09:31 2018
+
+@author: Tong
+流行学习中的等度量映射
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from MDS import mds
+
+#构建图
+def gragh(data,k):
+    sample_num=data.shape[0]
+    #计算欧式距离
+    dist=np.zeros([sample_num,sample_num])
+    for i in range(sample_num):
+        for j in range(sample_num):
+            dist[i,j]=np.linalg.norm(data[i]-data[j])
+            
+    knear=np.ones([sample_num,sample_num])*100000000#初始为无穷大
+    #k邻近的设置为欧式距离，其他的设置为无穷远。选取k邻近为欧式距离是为了保证流行空间的局部欧式同坯行
+    for i in range(sample_num):
+        indice=np.argsort(dist[i])[:k]
+        knear[i][indice]=dist[i][indice]
+    return knear
+        
+  #dist 为距离矩阵, start为路径的每次起始点
+def dijkstra(dist,start):
+    count=len(dist)
+    col=dist[start].copy()
+    rem=count-1
+    while rem>0:
+        indice=np.argsort(col)[0]#最小索引值
+        length=dist[start][indice]#当前距离矩阵里最短的
+        for j in range(count):
+            if dist[start][j]>length+dist[indice][j]:
+                dist[start][j]=length+dist[indice][j]
+                dist[j][start]=dist[start][j]#距离矩阵是对称阵
+        rem-=1
+        col[indice]=100000000
+        
+def iosmap(data,k,target_dim):
+    knear=gragh(data,k)
+    for i in range(data.shape[0]):
+        dijkstra(knear,i)
+    result_matrix=mds(knear,target_dim)
+    return result_matrix
+
+def main():
+    training_data=np.loadtxt('data.txt')
+    result_matrix=iosmap(training_data,4,2)
+    count=training_data.shape[0]
+    plt.figure()
+    for i in range(count):
+        plt.scatter(result_matrix[i][0],result_matrix[i][1],s=50,c='blue')
+    plt.show()
+    
+if __name__=='__main__':
+    main()
