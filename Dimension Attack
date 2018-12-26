@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec 24 14:24:16 2018
+
+@author: Tong
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+ 
+
+
+def mds(distance_matrix, dimension):
+    '''
+    this function can realize the mds algorithm
+    :param distance_matrix: the input samples distance matrix, which d_ij represent the distance of sample i sample j
+    :param dimension: the objective dimension to be reduced
+    :return: the coordinate of every sample in the low dimensional
+    '''
+    m = distance_matrix.shape[0]#sample的个数
+    
+    dis_ij_2 = distance_matrix ** 2
+
+    dis_i_2 = np.sum(dis_ij_2, 1)/m
+    
+    dis_i_2 = np.tile(dis_i_2, [m, 1])#维度匹配
+
+    dis_j_2 = dis_i_2.T#距离矩阵是对称矩阵，所以不用纠结怎么扩充矩阵
+    
+    dis_2 = np.sum(dis_ij_2) * np.ones([m, m])/m/m
+    
+    # 计算内积矩阵
+    new_distance_matrix = (dis_ij_2 - dis_i_2 - dis_j_2 + dis_2) * (-1 / 2)
+    
+    
+    # 对内积矩阵进行特征值分解，np.linalg.eig可以返回一个特征值，一个特征值向量
+    eig_value, eig_vector = np.linalg.eig(new_distance_matrix)
+
+    # sort是升序，所以加负号，变降序
+    sorted_indices = np.argsort(-eig_value)
+    took_eig_value=eig_value[sorted_indices[:dimension]]
+    took_vec = eig_vector[sorted_indices[:dimension],:]
+    
+    gamma = np.diag(np.sqrt(took_eig_value))
+    
+    took_vec = np.mat(took_vec)#-> array转matrix对象
+    gamma = np.mat(gamma)
+    
+    
+    coordinate_matrix = took_vec.T * gamma#此时，计算后的矩阵每一行是一个样本低维坐标
+    coordinate_matrix = np.array(coordinate_matrix)
+    return coordinate_matrix
+
+
+def main():
+    
+    training_data=np.loadtxt('data.txt')
+    num,dim=training_data.shape
+    dist_matrix=np.zeros([num,num])
+    for i in range(num):#计算原始距离矩阵
+        for j in range(num):
+            dist_matrix[i,j]=np.sqrt(np.sum((training_data[i]-training_data[j])**2))
+    b=mds(dist_matrix,2)
+    
+    plt.figure()
+    for i in range(num):
+            plt.scatter(b[i][0],b[i][1],c='red')
+    plt.show()
+
+
+if __name__ == '__main__':
+    main()
